@@ -336,7 +336,7 @@
 
             function keyHandler(keyEvent) {
                 if (!_isEnabled)
-                    return false;
+                    return true;
 
                 if (keyEvent.keyCode === ALT_KEYCODE || keyEvent.keyCode === CTRL_KEYCODE ||
                     keyEvent.keyCode === META_KEYCODE || keyEvent.keyCode === SHIFT_KEYCODE)
@@ -364,7 +364,7 @@
                             $log.info("keySMAC: Shortcut " + shortCut.toDisplayString() + " handled by context '" + contextInfo.contextName + "'");
 
                         keyEvent.preventDefault();
-                        return true;
+                        return false;
                     }
 
                     contextInfo = (contextInfo.parent) ? _contextHierarchy[contextInfo.parent] : null;
@@ -373,7 +373,7 @@
                 if (_config.logging)
                     $log.warn("keySMAC: Shortcut " + shortCut.toDisplayString() + " was not handled.");
 
-                return false;
+                return true;
             }
 
             // Pop the context off the top of the stack.  Any shortcut defined by this context will not be used.
