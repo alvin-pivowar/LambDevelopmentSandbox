@@ -181,21 +181,54 @@
 
             // ShortCut
 
-            function ShortCut(obj) {
-                if (!angular.isObject(obj)) throw new Error("Illegal ShortCut");
+            var PseudoKeys = {
+                BACKSPACE: 8,
+                BREAK: 19,
+                CAPS_LOCK: 20,
+                DELETE: 46,
+                DOWN: 40,
+                END: 35,
+                ENTER: 13,
+                ESCAPE: 27,
+                HOME: 36,
+                INSERT: 45,
+                LEFT: 37,
+                PAGE_DOWN: 34,
+                PAGE_UP: 33,
+                RIGHT: 39,
+                SPACE: 32,
+                TAB: 9,
+                UP: 38
+            };
 
-                if (!angular.isString(obj.key) || obj.key.length !== 1)
-                    throw new Error("Shortcut key must be a single character.");
+            // The key can be a single character, an integer (keycode), or a PseudoKey name (string)
+            function ShortCut(obj) {
+
+                if (!angular.isObject(obj)) throw new Error("Illegal ShortCut");
 
                 this.isAlt = false;
                 this.isControl = false;
                 this.isMeta = false;
                 this.isShift = false;
-
-                this.key = '';
-
                 angular.extend(this, obj);
-                this.key = obj.key.match(/[a-z]/i) ? obj.key.toUpperCase() : obj.key;
+
+                this.key = null;
+
+                if (angular.isString(obj.key)) {
+                    if (obj.key.length === 1)
+                        this.key = obj.key.toUpperCase();
+                    else if (PseudoKeys.hasOwnProperty(obj.key))
+                        obj.key = PseudoKeys[obj.key];
+                }
+
+                if (angular.isNumber(obj.key)) {
+                    this.key = String.fromCharCode(((96 <= obj.key && obj.key <= 105)
+                        ? obj.key - 48
+                        : obj.key )).toUpperCase()
+                }
+
+                if (!this.key)
+                    throw new Error("Unable to determine shortcut key from '" + obj.key + "'");
             }
 
             ShortCut.prototype = {
@@ -209,16 +242,34 @@
                 },
 
                 toDisplayString: function() {
+
+                    var getDisplayableCharacter = function(key) {
+                        var code = key.charCodeAt(0);
+                        var name;
+
+                        for (name in PseudoKeys) {
+                            if (PseudoKeys.hasOwnProperty(name) && PseudoKeys[name] === code)
+                                return name;
+                        }
+
+                        return key;
+                    };
+
                     var result = "";
                     if (this.isControl) result += "CONTROL";
                     if (this.isShift) result += (result.length > 0) ? "+SHIFT" : "SHIFT";
                     if (this.isAlt) result += (result.length > 0) ? "+ALT" : "ALT";
                     if (this.isMeta) result += (result.length > 0) ? "+META" : "META";
 
-                    result += (result.length > 0) ? ("+" + this.key) : this.key;
+                    result += (result.length > 0)
+                        ? ("+" + getDisplayableCharacter(this.key))
+                        : getDisplayableCharacter(this.key);
+
                     return result;
                 }
             };
+
+            ShortCut.PseudoKeys = PseudoKeys;
 
             ShortCut.fromKeyEvent = function(event) {
                 return new ShortCut({
@@ -226,9 +277,7 @@
                     isControl: event.ctrlKey,
                     isMeta: event.metaKey,
                     isShift: event.shiftKey,
-                    key: String.fromCharCode(((96 <= event.keyCode && event.keyCode <= 105)
-                        ? event.keyCode - 48
-                        : event.keyCode )).toUpperCase()
+                    key: event.keyCode
                 });
             };
 

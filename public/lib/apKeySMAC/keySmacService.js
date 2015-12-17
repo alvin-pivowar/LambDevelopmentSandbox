@@ -224,6 +224,32 @@
                 }
             }
 
+            // usage:   findRegistration(context, shortcut)   -- finds a shortcut given a context
+            //          findRegistration(shortcut)    -- finds a shortcut using the active context.
+            // The context is searched hierarchically.
+            // Return:  The context that has the found shortcut (or null).
+            function findRegistration() {
+                var contextName = (arguments.length === 2) ? arguments[0] : _stack[0];
+                var shortCut = new ShortCut(arguments[arguments.length - 1]);
+
+                var contextInfo;
+                var registration;
+
+                if (!_contextHierarchy.hasOwnProperty(contextName))
+                    throw new Error("Context '" + contextName + "' is unknown.");
+
+                contextInfo = _contextHierarchy[contextName];
+                while (contextInfo) {
+                    registration = contextInfo.findRegistration(shortCut);
+                    if (registration)
+                        return ContextInfo.pathFromContextName(contextInfo.contextName, _contextHierarchy);
+
+                    contextInfo = contextInfo.parent ? _contextHierarchy[contextInfo.parent] : null;
+                }
+
+                return null;
+            }
+
             function getActiveContext() {
                 var contextName = _stack[0];
                 return ContextInfo.pathFromContextName(contextName, _contextHierarchy);
@@ -327,7 +353,7 @@
                 contextInfo = _contextHierarchy[contextName];
                 while (contextInfo) {
                     registration = contextInfo.findRegistration(shortCut);
-                    if (registration) {
+                    if (registration && registration.callbackFn) {
                         (function(iife) {
                             $rootScope.$apply(function() {
                                 iife.registration.callbackFn(iife.registration);
@@ -335,7 +361,7 @@
                         })({ registration: registration });
 
                         if (_config.logging)
-                            $log.info("keySMAC: Shortcut " + JSON.stringify(shortCut) + " handled by context '" + contextInfo.contextName + "'");
+                            $log.info("keySMAC: Shortcut " + shortCut.toDisplayString() + " handled by context '" + contextInfo.contextName + "'");
 
                         keyEvent.preventDefault();
                         return true;
@@ -345,20 +371,29 @@
                 }
 
                 if (_config.logging)
-                    $log.warn("keySMAC: Shortcut " + JSON.stringify(shortCut) + " was not handled.");
+                    $log.warn("keySMAC: Shortcut " + shortCut.toDisplayString() + " was not handled.");
 
                 return false;
             }
 
             // Pop the context off the top of the stack.  Any shortcut defined by this context will not be used.
-            function pop() {
+            // If a context name is passed in, the stack will only be popped if the named context is on top.
+            function pop(contextNameOrPath) {
+                var contextName;
+
                 if (_stack.length === 1) {
                     if (_config.logging)
                         $log.warn("keySMAC: Attempting to pop from empty stack");
-                    return;
+                    return null;
                 }
 
-                var contextName = _stack.shift();
+                if (contextNameOrPath) {
+                    contextName = ContextInfo.contextNameFromPath(contextNameOrPath, _contextHierarchy);
+                    if (_stack[0] !== contextName)
+                        return null;
+                }
+
+                contextName = _stack.shift();
                 var path = ContextInfo.pathFromContextName(contextName, _contextHierarchy);
 
                 if (_stack.length === 0)
@@ -395,8 +430,47 @@
                     $log.info("keySMAC: pushing '" + path + "'")
             }
 
+            // usage:   replaceRegistration(context, registration)   -- re-registers shortcut in given context.
+            //          replaceRegistration(shortcut)    -- re-registers shortcut from first context in stack that has
+            //              shortcut.  (Both calls) If the shortcut is not found, it will be added.
+            //
+            // return:  The name of the context where the registration was replaced or added.
+            function replaceRegistration() {
+                var isContextSpecified = (arguments.length === 2);
+                var contextName = isContextSpecified ? arguments[0] : _stack[0];
+                var newRegistration = new ShortCutRegistration(arguments[arguments.length - 1]);
+                var shortCut = newRegistration.shortCut;
+
+                var contextInfo;
+                var registration;
+
+                if (!_contextHierarchy.hasOwnProperty(contextName))
+                    throw new Error("Context '" + contextName + "' is unknown.");
+
+                contextInfo = _contextHierarchy[contextName];
+                while (contextInfo) {
+                    registration = contextInfo.findRegistration(shortCut);
+                    if (registration) {
+                        angular.extend(registration, newRegistration);
+
+                        if (_config.logging)
+                            $log.info("keySmac: Replaced registration " + JSON.stringify(registration));
+
+                        return ContextInfo.pathFromContextName(contextInfo.contextName, _contextHierarchy);
+                    }
+
+                    // If a context is specified, do not walk the hierarchy.
+                    contextInfo = (!isContextSpecified && contextInfo.parent)
+                        ? _contextHierarchy[contextInfo.parent] : null;
+                }
+
+                addRegistration(contextName, newRegistration);
+                return ContextInfo.pathFromContextName(contextName, _contextHierarchy);
+            }
+
 
             return {
+                ContextInfo: ContextInfo,
                 KeySmacConfig: KeySmacConfig,
                 ShortCut: ShortCut,
                 ShortCutRegistration: ShortCutRegistration,
@@ -408,11 +482,13 @@
                 deleteRegistration: deleteRegistration,
                 disable: function() { disable(_config); },
                 enable: enable,
+                findRegistration: findRegistration,
                 getActiveContext: getActiveContext,
                 getActiveRegistrations: getActiveRegistrations,
                 initialize: initialize,
                 popContext: pop,
-                pushContext: push
+                pushContext: push,
+                replaceRegistration: replaceRegistration
             }
         }]);
 })();

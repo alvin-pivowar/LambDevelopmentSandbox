@@ -339,8 +339,8 @@ describe("keySmacModelProvider Tests", function() {
         expect(new ShortCut({ isControl: true, key: 'i'}).toDisplayString()).toBe("CONTROL+I");
         expect(new ShortCut({ isAlt: true, key: '8'}).toDisplayString()).toBe("ALT+8");
         expect(new ShortCut({ isControl: true, isMeta: true, key: '*'}).toDisplayString()).toBe("CONTROL+META+*");
-        expect(new ShortCut({ isAlt: true, isControl: true, isMeta: true, isShift: true, key: '&'})
-            .toDisplayString()).toBe("CONTROL+SHIFT+ALT+META+&");
+        expect(new ShortCut({ isAlt: true, isControl: true, isMeta: true, isShift: true, key: "UP"})
+            .toDisplayString()).toBe("CONTROL+SHIFT+ALT+META+UP");
         expect(new ShortCut({ isAlt: true, isControl: true, key: 'y'}).toDisplayString()).toBe("CONTROL+ALT+Y");
     });
 
