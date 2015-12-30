@@ -2,7 +2,7 @@
 (function(){
     "use strict";
 
-    angular.module("LambSample", ["ngMessages", "ngRoute", "ngToast", "apKeySMAC", "apLamb", "apLambSocks"]);
+    angular.module("LambSample", ["ngMessages", "ngRoute", "ngToast", "apLamb", "apLambSocks"]);
 
     angular
         .module("LambSample")

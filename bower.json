@@ -1,5 +1,5 @@
 {
-  "name": "Lamb Development",
+  "name": "Lamb Sample App",
   "authors": [
     "alvin-pivowar <alvin@ng-al.com>"
   ],
@@ -10,11 +10,11 @@
     "index.html"
   ],
   "dependencies": {
+    "angular": "^1.4.5",
     "angular-bootstrap": "^0.13.4",
     "angular-messages": "^1.4.5",
     "angular-route": "^1.4.5",
-    "angular": "^1.4.5",
     "bootstrap-css": "^3.3.4",
-    "angular-mocks": "~1.4.7"
+    "apLamb": "^2.0.0"
   }
 }

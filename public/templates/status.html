@@ -1,11 +1,5 @@
 <div ng-controller="statusCtrl as vm">
     <div class="pane" ng-include="'status.html'"></div>
-    <div class="pane">
-        <center><h2>KeySMAC LEGEND</h2></center>
-        <br />
-        <br />
-        <center><div ng-bind-html="vm.legend"></div></center>
-    </div>
 </div>
 
 <script type="text/ng-template" id="status.html">
@@ -43,16 +37,5 @@
             </div>
             <hr>
         </div>
-    </div>
-</script>
-
-<script type="text/ng-template" id="keyLegend.html">
-    <div>
-        <h3>Key Legend from HTML</h3>
-        <p>
-            <ol style="text-align: left">
-                <li ng-repeat="registration in registrations">{{registration.shortCut.toDisplayString()}}: {{registration.shortCutName}}</li>
-            </ol>
-        </p>
     </div>
 </script>
