@@ -24,9 +24,14 @@ module.exports = function (grunt) {
                     }, {
                         expand: "true",
                         cwd: ".",
-                        src: ["License.md", "README.md"],
-                        dest: "/Development/BowerComponents/apLamb/dist"
-                    }]
+                        src: ["bower.json"],
+                        dest: "/Development/BowerComponents/apLamb"
+                    }, {
+                    expand: "true",
+                    cwd: ".",
+                    src: ["License.md", "README.md"],
+                    dest: "/Development/BowerComponents/apLamb/dist"
+                 }]
             }
         },
 

@@ -1,4 +1,6 @@
 # Lamb API Documentation
+Lamb: "Little Angular Message Bus""
+
 The module's name is "apLamb"
 
 ## Configuration
