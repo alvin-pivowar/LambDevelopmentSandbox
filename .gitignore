@@ -1,11 +1,10 @@
 .idea/
 node_modules/
 public/lib/*
-<<<<<<< HEAD
+
 !public/lib/apKeySMAC/
 !public/lib/apLamb/
 !public/lib/apSock/
-=======
-!public/lib/apLambSocks
+!public/lib/apLambSocks/
 
->>>>>>> 07ab227402f7dfb8078ea0fe5328fd28017c9eab
+
