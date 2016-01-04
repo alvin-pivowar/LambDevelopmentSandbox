@@ -4,8 +4,8 @@
     angular
         .module("LambSample")
         .controller("statusCtrl",
-        ["$sce", "$scope", "keySMAC", "keySmacLegend", "statusSettings", "userService1",
-        function($sce, $scope, keySMAC, keySmacLegend, statusSettings, userService1) {
+        ["$sce", "$scope", "statusSettings", "userService1",
+        function($sce, $scope, statusSettings, userService1) {
             var vm = this;
             vm.editUser = {};
             vm.users = [];
@@ -25,8 +25,6 @@
 
             function cancelEdit() {
                 vm.editUser = {};
-                keySMAC.popContext();
-                updateLegend();
             }
 
             function create(newUser) {
@@ -53,8 +51,6 @@
                 angular.forEach(vm.users, function(user) {
                     if (user.id === id) {
                         angular.extend(vm.editUser, user);
-                        keySMAC.pushContext("editContext");
-                        updateLegend();
                     }
                 });
             }
@@ -66,22 +62,6 @@
                     var shortCut;
 
                     vm.users = data.data;
-                    for (i = 0; i < vm.users.length; ++i) {
-                        shortCut = new keySMAC.ShortCut({
-                            isAlt: true,
-                            key: String.fromCharCode('0'.charCodeAt(0) + i)
-                        });
-                        registration = new keySMAC.ShortCutRegistration({
-                            shortCut: shortCut,
-                            shortCutName: "edit",
-                            description: "Edit the corresponding row (1 - based)",
-                            callbackFn: onShortCut
-                        });
-                        keySMAC.addRegistration(registration);
-                    }
-
-                    var registrations = keySMAC.getActiveRegistrations();
-                    updateLegend();
                 });
 
                 statusSettings.useToast = true;
@@ -89,36 +69,7 @@
                     var path;
 
                     statusSettings.useToast = false;
-
-                    keySMAC.deleteContext("statusContext");
-                    keySMAC.deleteContext("editContext");
                 });
-
-                keySMAC.addContext("editContext");
-                keySMAC.addRegistration("editContext", new keySMAC.ShortCutRegistration({
-                    shortCut: new keySMAC.ShortCut({
-                        isControl: true,
-                        key: 'C'
-                    }),
-                    shortCutName: "cancel",
-                    description: "Cancel the edit operation",
-                    callbackFn: cancelEdit
-                }));
-                keySMAC.addRegistration("editContext", new keySMAC.ShortCutRegistration({
-                    shortCut: new keySMAC.ShortCut({
-                        isControl: true,
-                        key: 'S'
-                    }),
-                    shortCutName: "save",
-                    description: "Save the user",
-                    callbackFn: function() {
-                        update(vm.editUser);
-                    }
-                }));
-
-                keySMAC.addContext("$app/statusContext");
-                keySMAC.pushContext("statusContext");
-                updateLegend();
             }
 
             function onShortCut(registration) {
@@ -137,13 +88,6 @@
                         }
                     });
                     cancelEdit();
-                });
-            }
-
-            function updateLegend() {
-                //keySmacLegend.setTemplateUrl("keyLegend.html");
-                keySmacLegend.getLegend().then(function(legend) {
-                    vm.legend = $sce.trustAsHtml(legend);
                 });
             }
         }]);
