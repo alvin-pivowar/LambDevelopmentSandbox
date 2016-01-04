@@ -3,4 +3,4 @@ node_modules/
 public/lib/*
 !public/lib/apKeySMAC/
 !public/lib/apLamb/
-
+!public/lib/apSock/

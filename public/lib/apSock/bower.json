@@ -1,14 +1,14 @@
 {
-  "name": "apLamb",
-  "description": "Little Angular Message Bus",
+  "name": "apSock",
+  "description": "Angular socket.io service",
   "homepage": "http://www.ng-al.com",
   "authors": [
     "Alvin Pivowar (alvin@ng-al.com)"
   ],
-  "version": "2.0.1",
+  "version": "1.0.0",
   "license": "BSD",
   "main": [
-    "dist/apLamb.js"
+    "dist/apSock.js"
   ],
   "dependencies": {
     "angular": ">=1.2.0"
@@ -17,6 +17,7 @@
   "ignore": [],
   "keywords": [
     "Angular",
-    "Messaging"
+    "socket",
+    "socket.io"
   ]
 }

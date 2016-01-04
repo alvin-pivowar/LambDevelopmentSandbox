@@ -22,15 +22,10 @@ module.exports = function (grunt) {
                         src: ["apLamb.js", "apLamb.min.js"],
                         dest: "/Development/BowerComponents/apLamb/dist"
                     }, {
-                        expand: "true",
-                        cwd: ".",
-                        src: ["bower.json"],
-                        dest: "/Development/BowerComponents/apLamb"
-                    }, {
                     expand: "true",
                     cwd: ".",
-                    src: ["License.md", "README.md"],
-                    dest: "/Development/BowerComponents/apLamb/dist"
+                    src: ["bower.json", "License.md", "README.md"],
+                    dest: "/Development/BowerComponents/apLamb"
                  }]
             }
         },
