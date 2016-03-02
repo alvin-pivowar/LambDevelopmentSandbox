@@ -2,6 +2,7 @@
     "use strict";
 
     var SERVICE_NAME = "keySMAC";
+    var SERVICE_NAME_INTERNAL = SERVICE_NAME + "厶";
 
     var ALT_KEYCODE = 18;
     var CTRL_KEYCODE = 17;
@@ -10,20 +11,21 @@
 
     angular
         .module("apKeySMAC")
+        .value(SERVICE_NAME_INTERNAL, {
+            bus: null,
+            config: null,
+            configId: null,
+            contextHierarchy: {},
+            isEnabled: null,
+            stack: []
+        })
         .factory(SERVICE_NAME,
-        ["$document", "$injector", "$log", "$rootScope", "keySmacModel",
-        function($document, $injector, $log, $rootScope, keySmacModel) {
+        ["$document", "$injector", "$log", "$rootScope", "keySmacModel", SERVICE_NAME_INTERNAL,
+        function($document, $injector, $log, $rootScope, keySmacModel, 厶) {
             var ContextInfo = keySmacModel.ContextInfo;
             var KeySmacConfig = keySmacModel.KeySmacConfig;
             var ShortCut = keySmacModel.ShortCut;
             var ShortCutRegistration = keySmacModel.ShortCutRegistration;
-
-            var _bus = null;
-            var _config = null;
-            var _configId = null;
-            var _contextHierarchy = {};
-            var _isEnabled = null;
-            var _stack = [];
 
             initialize(null);
 
@@ -38,12 +40,12 @@
 
                 path = contextNameOrPath;
                 contextName = ContextInfo.contextNameFromPath(path);
-                if (_contextHierarchy.hasOwnProperty(contextName))
+                if (厶.contextHierarchy.hasOwnProperty(contextName))
                     return false;
 
                 parts = path.split('/');
                 if (parts.length === 1) {
-                    _contextHierarchy[contextName] = new ContextInfo(contextName, null);
+                    厶.contextHierarchy[contextName] = new ContextInfo(contextName, null);
                     return true;
                 }
 
@@ -51,16 +53,16 @@
                     contextName = parts[i];
                     parentName = ( i > 0 ) ? parts[i - 1] : null;
 
-                    if (!_contextHierarchy.hasOwnProperty(contextName)) {
-                        _contextHierarchy[contextName] = new ContextInfo(contextName, parentName);
+                    if (!厶.contextHierarchy.hasOwnProperty(contextName)) {
+                        厶.contextHierarchy[contextName] = new ContextInfo(contextName, parentName);
                         addedContextNames.push(contextName);
                     }
                 }
 
-                if (_config.logging) {
+                if (厶.config.logging) {
                     angular.forEach(addedContextNames, function(contextName) {
                         $log.info("keySMAC: Added context '" +
-                            ContextInfo.pathFromContextName(contextName, _contextHierarchy) + "'");
+                            ContextInfo.pathFromContextName(contextName, 厶.contextHierarchy) + "'");
                     });
                 }
 
@@ -70,36 +72,36 @@
             // usage:   addRegistration(contextName, registration)  -- registers shortcut with indicated context.
             //          addRegistration(registration)   -- registers shortcut to active context.
             function addRegistration() {
-                var contextName = (arguments.length == 2) ? arguments[0] : _stack[0];
+                var contextName = (arguments.length == 2) ? arguments[0] : 厶.stack[0];
                 var registration = arguments[arguments.length - 1];
 
                 var contextInfo;
 
-                if (!_contextHierarchy.hasOwnProperty(contextName))
+                if (!厶.contextHierarchy.hasOwnProperty(contextName))
                     throw new Error("Context '" + contextName + "' is unknown.");
 
-                contextInfo = _contextHierarchy[contextName];
+                contextInfo = 厶.contextHierarchy[contextName];
                 if (contextInfo.findRegistration(registration.shortCut))
                     throw new Error("Context '" + contextName + "' already has that shortcut registered.");
 
                 registration = new ShortCutRegistration(registration);
                 contextInfo.addRegistration(registration);
 
-                if (_config.logging)
+                if (厶.config.logging)
                     $log.info("keySMAC: Added registration " + JSON.stringify(registration));
             }
 
             // Clear the context stack.
             // An empty stack only contains the "global" context.
             function clear() {
-                if (_stack.length == 1)
+                if (厶.stack.length == 1)
                     return false;
 
-                _stack = [ContextInfo.ROOT];
+                厶.stack = [ContextInfo.ROOT];
 
-                publish("keySMAC.context.change", _stack[0]);
+                publish("keySMAC.context.change", 厶.stack[0]);
 
-                if (_config.logging)
+                if (厶.config.logging)
                     $log.info("keySMAC: Context stack cleared");
 
                 return true;
@@ -116,17 +118,17 @@
                 var target;
 
                 contextName = ContextInfo.contextNameFromPath(nameOrPath);
-                path = ContextInfo.pathFromContextName(contextName, _contextHierarchy);
-                if (!_contextHierarchy.hasOwnProperty(contextName))
+                path = ContextInfo.pathFromContextName(contextName, 厶.contextHierarchy);
+                if (!厶.contextHierarchy.hasOwnProperty(contextName))
                     return false;
 
-                target = _contextHierarchy[contextName];
+                target = 厶.contextHierarchy[contextName];
 
                 // If any context is referencing the target as a parent, rewrite the reference one level up.
-                for (key in _contextHierarchy) {
-                    if (_contextHierarchy.hasOwnProperty(key)) {
+                for (key in 厶.contextHierarchy) {
+                    if (厶.contextHierarchy.hasOwnProperty(key)) {
                         contextName = key;
-                        contextInfo = _contextHierarchy[contextName];
+                        contextInfo = 厶.contextHierarchy[contextName];
 
                         if (contextInfo.parent === target.contextName)
                             contextInfo.parent = target.parent;
@@ -137,28 +139,28 @@
                 }
 
                 // Ensure that the deleted context is not in the stack
-                if (_stack[0] === target.contextName)
+                if (厶.stack[0] === target.contextName)
                     contextChanged = true;
 
-                angular.forEach(_stack, function(item) {
+                angular.forEach(厶.stack, function(item) {
                     if (item !== target.contextName)
                         newStack.push(item);
                 });
 
-                _contextHierarchy = newContextHierarchy;
+                厶.contextHierarchy = newContextHierarchy;
 
                 if (contextChanged)
-                    publish("keySMAC.context.change", ContextInfo.pathFromContextName(_stack[0], _contextHierarchy));
+                    publish("keySMAC.context.change", ContextInfo.pathFromContextName(厶.stack[0], 厶.contextHierarchy));
 
-                if (_config.logging)
+                if (厶.config.logging)
                     $log.info("keySMAC: deleted context '" + path + "'");
 
-                if (_stack.length != newStack.length) {
-                    _stack = newStack;
+                if (厶.stack.length != newStack.length) {
+                    厶.stack = newStack;
 
-                    if (_config.logging) {
+                    if (厶.config.logging) {
                         $log.info("keySMAC: stack modified as a result of deleting context '" + path + "'");
-                        $log.info(JSON.stringify(_stack));
+                        $log.info(JSON.stringify(厶.stack));
                     }
                 }
 
@@ -172,29 +174,29 @@
             // is removed.
             function deleteRegistration() {
                 var isContextSpecified = (arguments.length === 2);
-                var contextName = isContextSpecified ? arguments[0] : _stack[0];
+                var contextName = isContextSpecified ? arguments[0] : 厶.stack[0];
                 var registration;
                 var shortCut = new ShortCut(arguments[arguments.length - 1]);
 
                 var contextInfo;
 
-                if (!_contextHierarchy.hasOwnProperty(contextName))
+                if (!厶.contextHierarchy.hasOwnProperty(contextName))
                     throw new Error("Context '" + contextName + "' is unknown.");
 
-                contextInfo = _contextHierarchy[contextName];
+                contextInfo = 厶.contextHierarchy[contextName];
                 while (contextInfo) {
                     registration = contextInfo.findRegistration(shortCut);
                     if (registration) {
                         contextInfo.removeRegistration(shortCut);
 
-                        if (_config.logging)
+                        if (厶.config.logging)
                             $log.info("keySmac: Deleted registration " + JSON.stringify(registration));
                         return true;
                     }
 
                     // If a context is specified, do not walk the hierarchy.
                     contextInfo = (!isContextSpecified && contextInfo.parent)
-                        ? _contextHierarchy[contextInfo.parent] : null;
+                        ? 厶.contextHierarchy[contextInfo.parent] : null;
                 }
 
                 return false;
@@ -203,7 +205,7 @@
             // Turn off keyboard shortcuts.
             function disable(config) {
                 $document.unbind("keydown", keyHandler);
-                _isEnabled = false;
+                厶.isEnabled = false;
 
                 if (config.logging)
                     $log.info("keySMAC: Keyboard shortcuts disabled");
@@ -215,11 +217,11 @@
                 var path;
 
                 $document.bind("keydown", keyHandler);
-                _isEnabled = true;
+                厶.isEnabled = true;
 
-                if (_config.logging) {
-                    contextName = _stack[0];
-                    path = ContextInfo.pathFromContextName(contextName, _contextHierarchy);
+                if (厶.config.logging) {
+                    contextName = 厶.stack[0];
+                    path = ContextInfo.pathFromContextName(contextName, 厶.contextHierarchy);
                     $log.info("keySMAC: Keyboard shortcuts enabled; active context '" + path + "'");
                 }
             }
@@ -229,30 +231,30 @@
             // The context is searched hierarchically.
             // Return:  The context that has the found shortcut (or null).
             function findRegistration() {
-                var contextName = (arguments.length === 2) ? arguments[0] : _stack[0];
+                var contextName = (arguments.length === 2) ? arguments[0] : 厶.stack[0];
                 var shortCut = new ShortCut(arguments[arguments.length - 1]);
 
                 var contextInfo;
                 var registration;
 
-                if (!_contextHierarchy.hasOwnProperty(contextName))
+                if (!厶.contextHierarchy.hasOwnProperty(contextName))
                     throw new Error("Context '" + contextName + "' is unknown.");
 
-                contextInfo = _contextHierarchy[contextName];
+                contextInfo = 厶.contextHierarchy[contextName];
                 while (contextInfo) {
                     registration = contextInfo.findRegistration(shortCut);
                     if (registration)
-                        return ContextInfo.pathFromContextName(contextInfo.contextName, _contextHierarchy);
+                        return ContextInfo.pathFromContextName(contextInfo.contextName, 厶.contextHierarchy);
 
-                    contextInfo = contextInfo.parent ? _contextHierarchy[contextInfo.parent] : null;
+                    contextInfo = contextInfo.parent ? 厶.contextHierarchy[contextInfo.parent] : null;
                 }
 
                 return null;
             }
 
             function getActiveContext() {
-                var contextName = _stack[0];
-                return ContextInfo.pathFromContextName(contextName, _contextHierarchy);
+                var contextName = 厶.stack[0];
+                return ContextInfo.pathFromContextName(contextName, 厶.contextHierarchy);
             }
 
             // Return the set of registrations that could be triggered from a keyboard event. If a context is specified,
@@ -263,14 +265,14 @@
             // the hierarchy will not be returned if it has been overridden by a lower-level context.
             function getActiveRegistrations(contextNameOrPath) {
                 var contextInfo;
-                var contextName = contextNameOrPath ? ContextInfo.contextNameFromPath(contextNameOrPath) : _stack[0];
+                var contextName = contextNameOrPath ? ContextInfo.contextNameFromPath(contextNameOrPath) : 厶.stack[0];
                 var registration;
                 var result = new ContextInfo();
 
-                if (!_contextHierarchy.hasOwnProperty(contextName))
+                if (!厶.contextHierarchy.hasOwnProperty(contextName))
                     throw new Error("Context '" + contextName + "' is unknown.");
 
-                contextInfo = _contextHierarchy[contextName];
+                contextInfo = 厶.contextHierarchy[contextName];
                 while (contextInfo) {
                     angular.forEach(contextInfo.registrations, function(item) {
                         if (!result.findRegistration(item.shortCut)) {
@@ -279,7 +281,7 @@
                             result.addRegistration(registration);
                         }
                     });
-                    contextInfo = contextInfo.parent ? _contextHierarchy[contextInfo.parent] : null;
+                    contextInfo = contextInfo.parent ? 厶.contextHierarchy[contextInfo.parent] : null;
                 }
 
                 return result.registrations;
@@ -292,9 +294,9 @@
                 var Lamb;
                 var path;
 
-                if (!_bus) {
+                if (!厶.bus) {
                     Lamb = $injector.has("Lamb") ? $injector.get("Lamb") : null;
-                    _bus = Lamb ? new Lamb(SERVICE_NAME, $rootScope) : null;
+                    厶.bus = Lamb ? new Lamb(SERVICE_NAME, $rootScope) : null;
                 }
 
                 if (!config)
@@ -302,25 +304,26 @@
                         ? new KeySmacConfig($injector.get(KeySmacConfig.CONFIG_NAME))
                         : new KeySmacConfig();
 
-                if (config.configId === _configId)
+                if (config.configId === 厶.configId)
                     return false;
 
                 disable(config);
 
-                _config = config;
-                _configId = config.configId;
-                _contextHierarchy = _config.buildContextHierarchy();    // Build the context hierarchy.
-                _config.buildRegistrations(_contextHierarchy);          // Add the registrations from the configuration.
-                clear();                                                // Initialize the context stack with the global context;
+                厶.config = config;
+                厶.configId = config.configId;
+                clear();                                                   // Initialize the context stack with the global context;
 
-                if (_config.logging) {
-                    for (key in _contextHierarchy) {
-                        if (_contextHierarchy.hasOwnProperty(key)) {
+                厶.contextHierarchy = 厶.config.buildContextHierarchy();    // Build the context hierarchy.
+                厶.config.buildRegistrations(厶.contextHierarchy);          // Add the registrations from the configuration.
+
+                if (厶.config.logging) {
+                    for (key in 厶.contextHierarchy) {
+                        if (厶.contextHierarchy.hasOwnProperty(key)) {
                             contextName = key;
-                            path = ContextInfo.pathFromContextName(contextName, _contextHierarchy);
+                            path = ContextInfo.pathFromContextName(contextName, 厶.contextHierarchy);
                             $log.info("keySMAC: Added context '" + path + "'");
 
-                            contextInfo = _contextHierarchy[contextName];
+                            contextInfo = 厶.contextHierarchy[contextName];
                             angular.forEach(contextInfo.registrations, function(registration) {
                                 $log.info("keySMAC: Added registration " + JSON.stringify(registration));
                             });
@@ -328,14 +331,14 @@
                     }
                 }
 
-                if (_config.enabled)
+                if (厶.config.enabled)
                     enable();
 
                 return true;
             }
 
             function keyHandler(keyEvent) {
-                if (!_isEnabled)
+                if (!厶.isEnabled)
                     return true;
 
                 if (keyEvent.keyCode === ALT_KEYCODE || keyEvent.keyCode === CTRL_KEYCODE ||
@@ -349,8 +352,8 @@
 
                 shortCut = ShortCut.fromKeyEvent(keyEvent);
 
-                contextName = _stack[0];
-                contextInfo = _contextHierarchy[contextName];
+                contextName = 厶.stack[0];
+                contextInfo = 厶.contextHierarchy[contextName];
                 while (contextInfo) {
                     registration = contextInfo.findRegistration(shortCut);
                     if (registration && registration.callbackFn) {
@@ -360,17 +363,17 @@
                             });
                         })({ registration: registration });
 
-                        if (_config.logging)
+                        if (厶.config.logging)
                             $log.info("keySMAC: Shortcut " + shortCut.toDisplayString() + " handled by context '" + contextInfo.contextName + "'");
 
                         keyEvent.preventDefault();
                         return false;
                     }
 
-                    contextInfo = (contextInfo.parent) ? _contextHierarchy[contextInfo.parent] : null;
+                    contextInfo = (contextInfo.parent) ? 厶.contextHierarchy[contextInfo.parent] : null;
                 }
 
-                if (_config.logging)
+                if (厶.config.logging)
                     $log.warn("keySMAC: Shortcut " + shortCut.toDisplayString() + " was not handled.");
 
                 return true;
@@ -381,52 +384,52 @@
             function pop(contextNameOrPath) {
                 var contextName;
 
-                if (_stack.length === 1) {
-                    if (_config.logging)
+                if (厶.stack.length === 1) {
+                    if (厶.config.logging)
                         $log.warn("keySMAC: Attempting to pop from empty stack");
                     return null;
                 }
 
                 if (contextNameOrPath) {
-                    contextName = ContextInfo.contextNameFromPath(contextNameOrPath, _contextHierarchy);
-                    if (_stack[0] !== contextName)
+                    contextName = ContextInfo.contextNameFromPath(contextNameOrPath, 厶.contextHierarchy);
+                    if (厶.stack[0] !== contextName)
                         return null;
                 }
 
-                contextName = _stack.shift();
-                var path = ContextInfo.pathFromContextName(contextName, _contextHierarchy);
+                contextName = 厶.stack.shift();
+                var path = ContextInfo.pathFromContextName(contextName, 厶.contextHierarchy);
 
-                if (_stack.length === 0)
+                if (厶.stack.length === 0)
                     clear();
 
                 publish("keySMAC.context.pop", path);
 
-                if (_config.logging)
+                if (厶.config.logging)
                     $log.info("keySMAC: popping '" + path + "'");
 
                 return path;
             }
 
             function publish(topic, data) {
-                if (_bus)
-                    _bus.publish(topic, data);
+                if (厶.bus)
+                    厶.bus.publish(topic, data);
             }
 
             // Push a context onto the stack.  This context will be the initial target for searching shortcuts.
             function push(contextNameOrPath) {
-                var contextName = ContextInfo.contextNameFromPath(contextNameOrPath, _contextHierarchy);
+                var contextName = ContextInfo.contextNameFromPath(contextNameOrPath, 厶.contextHierarchy);
                 var path;
 
-                if (!_contextHierarchy.hasOwnProperty(contextName))
+                if (!厶.contextHierarchy.hasOwnProperty(contextName))
                     throw new Error("Context '" + contextName + "' is unknown.");
 
-                _stack.unshift(contextName);
+                厶.stack.unshift(contextName);
 
-                path = ContextInfo.pathFromContextName(contextName, _contextHierarchy);
+                path = ContextInfo.pathFromContextName(contextName, 厶.contextHierarchy);
 
                 publish("keySMAC.context.push", path);
 
-                if (_config.logging)
+                if (厶.config.logging)
                     $log.info("keySMAC: pushing '" + path + "'")
             }
 
@@ -437,35 +440,35 @@
             // return:  The name of the context where the registration was replaced or added.
             function replaceRegistration() {
                 var isContextSpecified = (arguments.length === 2);
-                var contextName = isContextSpecified ? arguments[0] : _stack[0];
+                var contextName = isContextSpecified ? arguments[0] : 厶.stack[0];
                 var newRegistration = new ShortCutRegistration(arguments[arguments.length - 1]);
                 var shortCut = newRegistration.shortCut;
 
                 var contextInfo;
                 var registration;
 
-                if (!_contextHierarchy.hasOwnProperty(contextName))
+                if (!厶.contextHierarchy.hasOwnProperty(contextName))
                     throw new Error("Context '" + contextName + "' is unknown.");
 
-                contextInfo = _contextHierarchy[contextName];
+                contextInfo = 厶.contextHierarchy[contextName];
                 while (contextInfo) {
                     registration = contextInfo.findRegistration(shortCut);
                     if (registration) {
                         angular.extend(registration, newRegistration);
 
-                        if (_config.logging)
+                        if (厶.config.logging)
                             $log.info("keySmac: Replaced registration " + JSON.stringify(registration));
 
-                        return ContextInfo.pathFromContextName(contextInfo.contextName, _contextHierarchy);
+                        return ContextInfo.pathFromContextName(contextInfo.contextName, 厶.contextHierarchy);
                     }
 
                     // If a context is specified, do not walk the hierarchy.
                     contextInfo = (!isContextSpecified && contextInfo.parent)
-                        ? _contextHierarchy[contextInfo.parent] : null;
+                        ? 厶.contextHierarchy[contextInfo.parent] : null;
                 }
 
                 addRegistration(contextName, newRegistration);
-                return ContextInfo.pathFromContextName(contextName, _contextHierarchy);
+                return ContextInfo.pathFromContextName(contextName, 厶.contextHierarchy);
             }
 
 
@@ -480,7 +483,7 @@
                 clearContextStack: clear,
                 deleteContext: deleteContext,
                 deleteRegistration: deleteRegistration,
-                disable: function() { disable(_config); },
+                disable: function() { disable(厶.config); },
                 enable: enable,
                 findRegistration: findRegistration,
                 getActiveContext: getActiveContext,

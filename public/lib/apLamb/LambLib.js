@@ -15,7 +15,6 @@
 
     angular.module("apLamb", []);
 
-    //noinspection JSUnusedLocalSymbols
     angular
         .module("apLamb")
         .run(
@@ -23,7 +22,6 @@
         function($q, $rootScope, lambConfigService) {
             if (! angular.isPromise) {
                 angular.isPromise = function(obj) {
-                    //noinspection JSUnusedLocalSymbols
                     return (obj && obj.then && String(obj.then) === String($q(function(accept, reject) {accept();}).then));
                 }
             }
@@ -98,7 +96,6 @@
             };
         }]);
 
-    //noinspection JSUnusedLocalSymbols
     function LambConfig(logLevel, socks) {
         this.logLevel = logLevel;   // default: "None"
         this.socks = socks;         // default: null, but default sock protocol, host, and port default to server that
